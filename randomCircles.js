@@ -22,7 +22,7 @@ export default class RandomCircles {
 
   draw = () => {
     for (let i = 0; i < this.numOfCircles; i++) {
-      this.arr[i].draw();
+      this.arr[i].draw(this.ctx);
     }
   };
 }

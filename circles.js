@@ -1,5 +1,4 @@
-import { RandomCircle, intersect, fitScreen } from "./modules.js";
-import RandomCircles from "./randomCircles.js";
+import { RandomCircle, intersect, fitScreen, replaceAt } from "./modules.js";
 
 export default class Circles {
   constructor(numOfCircles, ctx, fixedCirclesArr) {
@@ -8,13 +7,19 @@ export default class Circles {
     this.fixedCirclesArr = fixedCirclesArr;
     this.arr = [];
     this.best = [];
+    this.weightSum = 0;
+    this.weight = [];
+    this.mutationRate = 0.1;
   }
+  /////////////////////////////////////////////////////////////////////
 
   generate = () => {
     for (let i = 0; i < this.numOfCircles; i++) {
-      this.arr.push(new RandomCircle(this.ctx));
+      this.arr.push(new RandomCircle());
     }
   };
+
+  /////////////////////////////////////////////////////////////////////
 
   draw = () => {
     for (let i = 0; i < this.arr.length; i++) {
@@ -31,6 +36,8 @@ export default class Circles {
     }
   };
 
+  /////////////////////////////////////////////////////////////////////
+
   generateBest = () => {
     for (let i = 0; i < this.arr.length; i++) {
       if (
@@ -38,6 +45,7 @@ export default class Circles {
         !intersect(this.fixedCirclesArr, this.arr[i])
       ) {
         this.best.push(this.arr[i]);
+        this.weightSum += this.arr[i].radius;
       }
     }
 
@@ -45,11 +53,20 @@ export default class Circles {
       return c1.radius - c2.radius;
     });
     this.best.reverse();
-    console.log(this.best);
   };
 
+  /////////////////////////////////////////////////////////////////////
+
+  generateWeight = () => {
+    for (let i = 0; i < this.best.length; i++) {
+      this.weight.push(this.best[i].radius / this.weightSum);
+    }
+  };
+
+  /////////////////////////////////////////////////////////////////////
+
   drawBest = () => {
-    for (let i = 1; i < this.best.length; i++) {
+    /*for (let i = 1; i < this.best.length; i++) {
       this.ctx.strokeStyle = "white";
       this.ctx.beginPath();
       this.ctx.arc(
@@ -60,7 +77,7 @@ export default class Circles {
         2 * Math.PI
       );
       this.ctx.stroke();
-    }
+    }*/
     this.ctx.strokeStyle = "red";
     this.ctx.beginPath();
     this.ctx.arc(
@@ -71,5 +88,95 @@ export default class Circles {
       2 * Math.PI
     );
     this.ctx.stroke();
+  };
+
+  /////////////////////////////////////////////////////////////////////
+
+  pickMate = () => {
+    let random = Math.random();
+    let minWeight = 0;
+    for (let i = 0; i < this.weight.length; i++) {
+      if (random > minWeight && random <= minWeight + this.weight[i]) {
+        return this.best[i];
+      }
+      minWeight += this.weight[i];
+    }
+    return this.best[this.best.length - 1];
+  };
+
+  /////////////////////////////////////////////////////////////////////
+
+  crossOver = () => {
+    let circleMom = this.pickMate();
+    let circleDad = this.pickMate();
+    let circleChild = new RandomCircle();
+
+    let DNAm = circleMom.x.toString(2);
+    let DNAm1 = DNAm.substring(0, DNAm.length / 2);
+    let DNAd = circleDad.x.toString(2);
+    let DNAd2 = DNAd.substring(DNAd.length / 2, DNAd.length);
+    circleChild.x = parseInt(DNAm1 + DNAd2, 2);
+
+    DNAm = circleMom.y.toString(2);
+    DNAm1 = DNAm.substring(0, DNAm.length / 2);
+    DNAd = circleDad.y.toString(2);
+    DNAd2 = DNAd.substring(DNAd.length / 2, DNAd.length);
+    circleChild.y = parseInt(DNAm1 + DNAd2, 2);
+
+    DNAm = circleMom.radius.toString(2);
+    DNAm1 = DNAm.substring(0, DNAm.length / 2);
+    DNAd = circleDad.radius.toString(2);
+    DNAd2 = DNAd.substring(DNAd.length / 2, DNAd.length);
+    circleChild.radius = parseInt(DNAm1 + DNAd2, 2);
+
+    return circleChild;
+  };
+
+  /////////////////////////////////////////////////////////////////////
+
+  mutate = circle => {
+    let x = circle.x.toString(2);
+    let xRandBin = Math.floor(Math.random() * x.length);
+    let y = circle.y.toString(2);
+    let yRandBin = Math.floor(Math.random() * y.length);
+    let radius = circle.radius.toString(2);
+    let radRandBin = Math.floor(Math.random() * radius.length);
+
+    x =
+      x[xRandBin] == "1"
+        ? replaceAt(x, xRandBin, "0")
+        : replaceAt(x, xRandBin, "1");
+    y =
+      y[yRandBin] == "1"
+        ? replaceAt(y, yRandBin, "0")
+        : replaceAt(y, yRandBin, "1");
+    radius =
+      radius[radRandBin] == "1"
+        ? replaceAt(radius, radRandBin, "0")
+        : replaceAt(radius, radRandBin, "1");
+
+    circle.x = parseInt(x, 2);
+    circle.y = parseInt(y, 2);
+    circle.radius = parseInt(radius, 2);
+  };
+
+  /////////////////////////////////////////////////////////////////////
+
+  newGeneration = () => {
+    let newGenArr = [];
+    let circleChild;
+    for (let i = 0; i < 148; i++) {
+      circleChild = this.crossOver();
+      if (Math.random() <= this.mutationRate) this.mutate(circleChild);
+      newGenArr.push(circleChild);
+    }
+    newGenArr.push(this.best[1]);
+    newGenArr.push(this.best[0]);
+    this.arr = newGenArr;
+    this.weight = [];
+    this.weightSum = 0;
+    this.best = [];
+    this.generateBest();
+    this.generateWeight();
   };
 }

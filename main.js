@@ -14,3 +14,15 @@ circles.generate();
 // circles.draw();
 circles.generateBest();
 circles.drawBest();
+circles.generateWeight();
+
+let main = () => {
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  random.draw();
+  circles.newGeneration();
+  console.log(circles.best[0].x);
+  circles.drawBest();
+  requestAnimationFrame(main);
+};
+
+main();
