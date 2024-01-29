@@ -9,10 +9,6 @@ This project implements a Genetic Algorithm to find the best-fit circle within a
 - [Features](#features)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Configuration](#configuration)
-- [Results](#results)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## Features
 
